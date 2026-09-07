@@ -1,0 +1,49 @@
+name: Al-Dhiyaa Android Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.2'
+          cache: true
+
+      - name: Generate missing Flutter platform folders
+        run: flutter create . --platforms=android,web,windows --org com.aldhiyaa --project-name al_dhiyaa_gallery
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build release APK
+        run: flutter build apk --release --build-name=1.1.0 --build-number=${{ github.run_number }}
+
+      - name: Build Play Store App Bundle
+        run: flutter build appbundle --release --build-name=1.1.0 --build-number=${{ github.run_number }}
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: al-dhiyaa-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: al-dhiyaa-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 14
